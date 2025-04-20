@@ -9,3 +9,16 @@
 ```bash
 git clone https://github.com/your-repo/danang-realestate.git
 cd danang-realestate
+
+# Scale backend service
+docker compose up -d --scale backend=4
+
+# Xem logs thời gian thực
+docker compose logs -f --tail=100
+
+# Giám sát hiệu năng
+docker stats
+
+# Cập nhật không downtime
+docker compose pull
+docker compose up -d --force-recreate
