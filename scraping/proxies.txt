@@ -1,0 +1,4 @@
+# scraping/proxies.txt
+http://user:pass@proxy1.danang.vn:3128
+http://user:pass@proxy2.danang.vn:3128
+socks5://user:pass@proxy3.danang.vn:1080
