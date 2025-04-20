@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  reverse-proxy:
+    image: traefik:v2.10
+    command:
+      - --providers.docker
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.email=admin@danangbds.com
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./letsencrypt:/letsencrypt
+
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/danangbds
+      - AI_MODEL_PATH=/app/models/danang_xgb_v1.3.pkl
+    volumes:
+      - ./data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    labels:
+      - traefik.http.routers.backend.rule=Host(`api.danangbds.com`)
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.routers.backend.tls.certresolver=myresolver
+
+  frontend:
+    build: ./frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=https://api.danangbds.com
+    labels:
+      - traefik.http.routers.frontend.rule=Host(`danangbds.com`)
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.tls.certresolver=myresolver
+
+  scraping:
+    build: ./scraping
+    environment:
+      - PROXY_LIST=/app/proxies.txt
+    volumes:
+      - ./scraping/data:/app/data
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: danang123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  letsencrypt:
